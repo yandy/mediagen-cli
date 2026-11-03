@@ -1032,6 +1032,17 @@ function runConfigPath(flags: { json?: boolean }): void {
 /** `skill install` needs no config and no network; stdout carries the paths only. */
 function runSkillInstall(flags: { dir?: string; json?: boolean }): void {
   const installed = installSkills(flags.dir ?? "");
+  const container = path.dirname(installed[0].path);
+
+  // `--dir` names the directory that holds skills. Pointing it at one skill's own
+  // directory nests a level deeper than any agent looks, so say so rather than
+  // leaving a silently unusable install.
+  if (fs.existsSync(path.join(container, "SKILL.md"))) {
+    writeErrLine(
+      `note: ${container} already holds a SKILL.md; --dir names the directory that contains ` +
+        `skills, so the skill landed in ${installed[0].path}`,
+    );
+  }
 
   if (flags.json === true) {
     writeLine(JSON.stringify({ skills: installed }));

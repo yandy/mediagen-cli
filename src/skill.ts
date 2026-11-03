@@ -31,12 +31,19 @@ export function installSkill(sourceDir: string, targetDir: string, deps: SkillDe
   const cp = deps.cp ?? ((from: string, to: string) => fs.cpSync(from, to, { recursive: true }));
   const rename = deps.rename ?? ((from: string, to: string) => fs.renameSync(from, to));
 
+  const existing = lstatOrUndefined(targetDir);
+  if (existing !== undefined && !existing.isDirectory()) {
+    throw new UsageError(
+      `${targetDir} exists and is not a directory: move it aside, then run the command again`,
+    );
+  }
+
   let retiredPath: string | undefined;
   let replaced = false;
 
   try {
     cp(sourceDir, staging);
-    if (fs.existsSync(targetDir)) {
+    if (existing !== undefined) {
       rename(targetDir, retired);
       retiredPath = retired;
       replaced = true;
@@ -70,6 +77,15 @@ export function installSkill(sourceDir: string, targetDir: string, deps: SkillDe
   }
 
   return replaced;
+}
+
+/** `lstat` that reports a missing path as undefined, so a broken symlink still counts as there. */
+function lstatOrUndefined(target: string): fs.Stats | undefined {
+  try {
+    return fs.lstatSync(target);
+  } catch {
+    return undefined;
+  }
 }
 
 /** A unique hidden path inside `root`, on the same filesystem as the target it sits beside. */

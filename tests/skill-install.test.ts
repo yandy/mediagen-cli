@@ -89,6 +89,26 @@ describe("installSkill", () => {
     expect(fs.readFileSync(path.join(target(), "SKILL.md"), "utf8")).toBe("v1\n");
   });
 
+  it("refuses a file sitting where the skill directory belongs", () => {
+    makeSource({ "SKILL.md": "v1\n" });
+    fs.mkdirSync(path.dirname(target()), { recursive: true });
+    fs.writeFileSync(target(), "my own notes\n");
+
+    expect(() => installSkill(source, target())).toThrow(/not a directory/);
+    expect(fs.readFileSync(target(), "utf8")).toBe("my own notes\n");
+  });
+
+  it("refuses a symlink sitting where the skill directory belongs", () => {
+    makeSource({ "SKILL.md": "v1\n" });
+    const elsewhere = path.join(tempDir, "elsewhere");
+    fs.mkdirSync(elsewhere, { recursive: true });
+    fs.mkdirSync(path.dirname(target()), { recursive: true });
+    fs.symlinkSync(elsewhere, target(), "dir");
+
+    expect(() => installSkill(source, target())).toThrow(/not a directory/);
+    expect(fs.lstatSync(target()).isSymbolicLink()).toBe(true);
+  });
+
   it("keeps the previous copy when it cannot be put back", () => {
     makeSource({ "SKILL.md": "v1\n" });
     installSkill(source, target());
@@ -289,6 +309,18 @@ describe("skill install", () => {
     expect(second.code).toBe(0);
     expect(second.stderr).toMatch(/replaced/);
     expect(second.stdout).toBe(`${path.join(tempDir, "mediagen")}\n`);
+  });
+
+  it("notes that --dir already holds a SKILL.md, instead of nesting quietly", async () => {
+    const skillDir = path.join(tempDir, "a", "skills", "mediagen");
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, "SKILL.md"), "---\nname: mine\n---\n");
+
+    const result = await runCli(["skill", "install", "--dir", skillDir]);
+
+    expect(result.code).toBe(0);
+    expect(result.stderr).toMatch(/already holds a SKILL\.md/);
+    expect(result.stdout).toBe(`${path.join(skillDir, "mediagen")}\n`);
   });
 
   it("reports a missing --dir as a usage error", async () => {
