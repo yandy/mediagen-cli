@@ -264,10 +264,11 @@ That delivers `skills/mediagen/SKILL.md` only: pi never puts the `mediagen` comm
 `PATH`, so the CLI still comes from `npm install -g @yandy0725/mediagen-cli`. For any other
 agent, `mediagen skill install --dir <skills dir>` puts the same file where that agent
 already looks — e.g. `--dir ~/.claude/skills` — and re-running it after an upgrade replaces
-the old copy. Use one route, not both: pi keys skills by path, so a package install plus a
-copied directory shows up as two `mediagen` skills. The skill describes what this CLI does,
-which tool to prefer when the project already generates media another way, and the rules
-that keep a paid request from being wasted.
+the old copy. Use one route, not both: pi loads skills by name, so the two copies collide — the
+directory you copied wins and pi only reports a `name "mediagen" collision` warning, which
+means a stale copy silently shadows the upgraded package. The skill describes what this CLI
+does, which tool to prefer when the project already generates media another way, and the
+rules that keep a paid request from being wasted.
 
 ---
 

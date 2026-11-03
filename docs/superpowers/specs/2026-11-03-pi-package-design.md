@@ -56,9 +56,11 @@ discovery ever changed, and nothing in this repo currently states the intent.
 ## Constraints
 
 - `files: ["dist", "skills"]` stays as is: it is what makes the skill publishable at all.
-- pi dedupes resolved resources by path, not by skill name. Someone who ran
-  `mediagen skill install --dir ~/.pi/agent/skills` *and* installed the pi package would see
-  two `mediagen` skills. The docs must say to pick one route; the code cannot detect it.
+- pi dedupes resolved resource *paths*, but loads skills by *name*: two copies of `mediagen`
+  yield one skill, not two, plus a `name "mediagen" collision` diagnostic. The user directory
+  (precedence rank 3) outranks a package resource (rank 4), so a copy installed by
+  `mediagen skill install --dir ~/.pi/agent/skills` silently shadows the upgraded package copy.
+  The docs must say to pick one route; the code cannot detect it.
 - The package has no extensions, so pi's package changelog never applies (`pi.changelogPath`
   is pointless here).
 
