@@ -1,7 +1,8 @@
 # `mediagen skill install` — landing the packaged skill in a directory
 
 Date: 2026-11-03
-Status: awaiting approval — approach A, copy the shipped `skills/` directory at runtime
+Status: awaiting approval — copy the shipped `skills/` directory at runtime, staging it beside
+the destination and swapping it in with one `rename`
 
 ## Why
 
@@ -38,13 +39,44 @@ holds — no second copy of the markdown to drift.
 Everything under that directory is installed, one `<dir>/<name>/` per skill directory found,
 so a future second skill needs no code change. Today that is one directory: `mediagen`.
 
-**The write.** `fs.cp` recursive into `<dir>/<name>/`, creating `<dir>` recursively first.
-When the destination already exists it is **replaced**, unconditionally — re-running the
-command after an upgrade is the intended way to upgrade an installed skill. Replacing an
-existing copy prints one stderr note (`replaced the existing copy at <path>`) so the upgrade
-is visible without being noisy; stdout stays the result only, matching every other command.
+**The write.** The destination is **replaced**, unconditionally — re-running the command after
+an upgrade is the intended way to upgrade an installed skill. Replacing an existing copy
+prints one stderr note (`replaced the existing copy at <path>`) so the upgrade is visible
+without being noisy; stdout stays the result only, matching every other command.
 
 No `--force`, no confirmation prompt, no merge, no backup copy.
+
+## Replacing a directory, not merging into it
+
+`fs.cp` does not replace a directory. It merges: a file present in the source overwrites its
+same-named counterpart, and everything else already in the destination stays. Verified
+directly — a source holding `SKILL.md`, `ref/a.md` and `ref/b.md`, copied over a destination
+holding `ref/x.md`, ends up with `ref/{a.md, b.md, x.md}`. A skill may carry references and
+scripts, so the first version to *remove* one would leave it behind on every machine that
+installed the previous version, and an agent reading that directory would load a mixture of
+two versions. A plain `cp` therefore cannot satisfy "what gets installed is what the
+repository holds".
+
+So each install is staged and swapped:
+
+1. `fs.mkdir(<dir>, {recursive: true})`.
+2. Copy the source skill into a sibling staging directory inside `<dir>`, e.g.
+   `<dir>/.mediagen-install-<pid>-<random>/`, so it sits on the same filesystem as the target
+   and the final `rename` cannot fail with `EXDEV`.
+3. `fs.rename(staging, <dir>/<name>)`, which replaces an existing directory in one step.
+4. On any failure, `fs.rm(staging, {recursive: true, force: true})` in a `finally` and let the
+   error out; the previous copy is untouched.
+
+The point is that the destination is never observable half-written: at every instant an agent
+reading that path sees either the whole previous copy or the whole new one. Delete-then-copy
+would be two lines shorter and loss-free in the normal case, but a copy that dies partway
+(full disk, one unreadable file) leaves a truncated `SKILL.md` exactly where an agent is about
+to look — a worse outcome than the error itself.
+
+Known residue, accepted: a process killed between step 2 and step 3 leaves a dot-prefixed
+staging directory behind. Nothing sweeps for it — the prefix only ever holds a copy of a
+skill this package ships, and a sweep would mean deleting directories that this run did not
+create. A later install into the same `<dir>` is unaffected.
 
 **Output.** Human mode prints each installed skill directory path, one per line, on stdout.
 `--json` prints one flat object, in the style of `config path` and `auth status` rather than
@@ -78,6 +110,10 @@ instead of a path inside `node_modules`.
 - Re-running it replaces the previous copy and says so on stderr; stdout stays one path per
   line in human mode and the single JSON object above in `--json`.
 - `<path>` may not exist, may be nested, and may be given with a leading `~/`.
+- After a re-install the destination holds exactly the files the package ships: a file the
+  new version dropped is gone, not merged into the old set.
+- The destination is never left half-written; a failed or interrupted install leaves the
+  previous copy intact.
 - `mediagen --help` and both READMEs mention the command.
 - The command never touches config.toml's contents, never makes a network call, and never
   prints or reads an API key.
@@ -93,6 +129,8 @@ instead of a path inside `node_modules`.
 - Symlinks (pointing at the package directory would break on `npm rm`) and build-time
   inlining of the markdown into `dist/cli.js` (a second copy that can drift from the one the
   tests read, and a `npx`-only benefit nothing has asked for).
+- Sweeping or reporting leftover staging directories from a killed process, and keeping the
+  replaced copy as a backup the user can restore.
 - Changing the pre-command bootstrap. `skill install` is a local, config-free command, yet
   `main()` still runs `prepareConfigFile()` before it — accepted, so that every command sees
   the same file and a broken config is reported the same way everywhere. The consequence is
@@ -120,9 +158,15 @@ instead of a path inside `node_modules`.
   must work signed out, offline, and with a broken `config.toml` apart from the bootstrap
   check every command shares.
 - Quietly skipping an install and exiting 0 because the source directory was missing.
+- Merging into an existing skill directory, leaving behind a reference or script that the
+  shipped version no longer has.
+- Emptying the destination before the new copy is complete, so a failure leaves a partial
+  skill where a working one used to be.
 
 ## Left to the builder
 
+- The staging directory's name; it only has to be hidden, unique per install, and inside
+  `<dir>`.
 - Wording of the "replaced the existing copy" note needed to make an upgrade visible without
   making a first install noisy.
 - How the note and the `--json` envelope report a replacement: `replaced` is per skill, and
