@@ -5,10 +5,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { UsageError } from "./errors.js";
 
-/** The two filesystem calls a test replaces to make an install fail mid-flight. */
+/** What a test replaces to make an install fail mid-flight, or to point at a broken package. */
 export interface SkillDeps {
   cp?: (from: string, to: string) => void;
   rename?: (from: string, to: string) => void;
+  /** Where the shipped skills live; defaults to `bundledSkillsDir()`. */
+  sourceRoot?: string;
 }
 
 /**
@@ -59,9 +61,11 @@ export function installSkill(sourceDir: string, targetDir: string, deps: SkillDe
     }
     throw error;
   } finally {
-    fs.rmSync(staging, { recursive: true, force: true });
-    if (retiredPath !== undefined) {
-      fs.rmSync(retiredPath, { recursive: true, force: true });
+    try {
+      fs.rmSync(staging, { recursive: true, force: true });
+    } catch {
+      // Cleaning up must never replace the error being reported, and must never
+      // touch the retired copy: when the restore above failed, it is all that is left.
     }
   }
 
@@ -95,8 +99,7 @@ export function bundledSkillsDir(): string {
   return fileURLToPath(new URL("../skills/", import.meta.url));
 }
 
-export function bundledSkillNames(): string[] {
-  const root = bundledSkillsDir();
+export function bundledSkillNames(root: string = bundledSkillsDir()): string[] {
   try {
     return fs
       .readdirSync(root, { withFileTypes: true })
@@ -113,18 +116,29 @@ export function bundledSkillNames(): string[] {
 
 /** Installs every bundled skill under `targetDir`, replacing what is already there. */
 export function installSkills(targetDir: string, deps: SkillDeps = {}): InstalledSkill[] {
+  // The source is read before the destination is created: a broken package must
+  // fail without leaving an empty skills directory behind, and an empty skills/
+  // must never be reported as a successful install.
+  const sourceRoot = deps.sourceRoot ?? bundledSkillsDir();
+  const names = bundledSkillNames(sourceRoot);
+  if (names.length === 0) {
+    throw new Error(
+      `no skills were found in ${sourceRoot}: the package is incomplete, reinstall mediagen`,
+    );
+  }
+
   const root = prepareTargetDir(targetDir);
-  return bundledSkillNames().map((name) => ({
+  return names.map((name) => ({
     name,
     path: path.join(root, name),
-    replaced: installSkill(path.join(bundledSkillsDir(), name), path.join(root, name), deps),
+    replaced: installSkill(path.join(sourceRoot, name), path.join(root, name), deps),
   }));
 }
 
 /**
- * Turns the `--dir` argument into an absolute, existing directory. Every failure
- * here is the caller's argument, so all of them are UsageErrors (exit 2); the
- * message names `--dir` and keeps the errno code, never other fs text.
+ * Turns the `--dir` argument into an absolute, existing, writable directory. Every
+ * failure here is the caller's argument, so all of them are UsageErrors (exit 2);
+ * the message names `--dir`, matching `ensureOutDir` in generate.ts.
  */
 function prepareTargetDir(value: string): string {
   const trimmed = value.trim();
@@ -151,6 +165,17 @@ function prepareTargetDir(value: string): string {
   } catch (error) {
     throw new UsageError(
       `cannot create the skills directory ${dir}: ${messageOf(error)}; check --dir`,
+    );
+  }
+
+  // mkdir succeeds on a directory that already exists without checking that it is
+  // writable, and the copy would then fail with a message naming an internal
+  // staging directory instead of --dir.
+  try {
+    fs.accessSync(dir, fs.constants.W_OK);
+  } catch (error) {
+    throw new UsageError(
+      `cannot write to the skills directory ${dir}: ${messageOf(error)}; check --dir`,
     );
   }
 

@@ -39,6 +39,7 @@ describe("installSkill", () => {
 
     expect(fs.readFileSync(path.join(target(), "SKILL.md"), "utf8")).toBe("v1\n");
     expect(fs.readFileSync(path.join(target(), "ref", "a.md"), "utf8")).toBe("a\n");
+    expect(leavings()).toEqual([]);
   });
 
   it("drops a file the new version no longer ships", () => {
@@ -86,6 +87,26 @@ describe("installSkill", () => {
     ).toThrow(/EXDEV/);
 
     expect(fs.readFileSync(path.join(target(), "SKILL.md"), "utf8")).toBe("v1\n");
+  });
+
+  it("keeps the previous copy when it cannot be put back", () => {
+    makeSource({ "SKILL.md": "v1\n" });
+    installSkill(source, target());
+    fs.writeFileSync(path.join(source, "SKILL.md"), "v2\n");
+
+    expect(() =>
+      installSkill(source, target(), {
+        // Every rename of a hidden path fails: the retire and the restore both.
+        rename: (from, to) => {
+          if (from.includes(".mediagen-")) throw new Error("EROFS: read-only file system");
+          fs.renameSync(from, to);
+        },
+      }),
+    ).toThrow(/could not be put back/);
+
+    const kept = leavings().map((name) => path.join(path.dirname(target()), name));
+    expect(kept).toHaveLength(1);
+    expect(fs.readFileSync(path.join(kept[0]!, "SKILL.md"), "utf8")).toBe("v1\n");
   });
 });
 
@@ -148,6 +169,58 @@ describe("installSkills", () => {
   it("replaces a previously installed copy", () => {
     installSkills(tempDir);
     expect(installSkills(tempDir)[0]?.replaced).toBe(true);
+  });
+
+  it("fails when the packaged skills are missing, and creates nothing", () => {
+    const destination = path.join(tempDir, "dest");
+    const missing = path.join(tempDir, "no-skills");
+
+    expect(() =>
+      installSkills(destination, { sourceRoot: missing }),
+    ).toThrow(/were not found/);
+    expect(fs.existsSync(destination)).toBe(false);
+  });
+
+  it("fails when the packaged skills directory is empty", () => {
+    const destination = path.join(tempDir, "dest");
+    const empty = path.join(tempDir, "empty-skills");
+    fs.mkdirSync(empty, { recursive: true });
+
+    expect(() =>
+      installSkills(destination, { sourceRoot: empty }),
+    ).toThrow(/no skills were found/);
+    expect(fs.existsSync(destination)).toBe(false);
+  });
+
+  it("refuses an existing destination it cannot write to", () => {
+    const sealed = path.join(tempDir, "sealed");
+    fs.mkdirSync(sealed);
+    fs.chmodSync(sealed, 0o555);
+
+    try {
+      expect(() => installSkills(sealed)).toThrow(/cannot write to the skills directory/);
+    } finally {
+      fs.chmodSync(sealed, 0o755);
+    }
+  });
+
+  it("expands a bare ~ and leaves a ~user form alone", () => {
+    const home = path.join(tempDir, "home2");
+    fs.mkdirSync(home, { recursive: true });
+    const previousHome = process.env.HOME;
+    const previousCwd = process.cwd();
+    process.env.HOME = home;
+    process.chdir(tempDir);
+
+    try {
+      expect(installSkills("~")[0]?.path).toBe(path.join(home, "mediagen"));
+      expect(installSkills("~nobody/skills")[0]?.path).toBe(
+        path.join(tempDir, "~nobody", "skills", "mediagen"),
+      );
+    } finally {
+      process.chdir(previousCwd);
+      process.env.HOME = previousHome;
+    }
   });
 
   it("refuses an empty destination", () => {

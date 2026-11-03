@@ -39,6 +39,7 @@ Node >= 18, two runtime dependencies, a DashScope and/or Ark API key.
 | `mediagen login` / `logout` / `auth status` | store, remove, inspect API keys |
 | `mediagen config show` / `config path` | resolved config, and where it lives |
 | `mediagen config add <name>` | create a provider in config.toml; everything else is a manual edit |
+| `mediagen skill install --dir <path>` | copy the packaged agent skill into `<path>/mediagen/`; re-run to replace it |
 
 `mediagen image generate --help` and `mediagen video generate --help` are the
 reference: every flag, the model table, the size reference, examples. Everything below
