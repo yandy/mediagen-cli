@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { installSkill } from "../src/skill.js";
+import { installSkill, bundledSkillNames, bundledSkillsDir, installSkills } from "../src/skill.js";
 
 let tempDir: string;
 let source: string;
@@ -94,3 +94,76 @@ function leavings(): string[] {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root).filter((entry) => entry.startsWith(".mediagen-"));
 }
+
+describe("bundledSkillNames", () => {
+  it("lists the skill directories this package ships, in a stable order", () => {
+    // fileURLToPath keeps the trailing separator of "../skills/", so resolve first.
+    expect(path.resolve(bundledSkillsDir())).toBe(path.join(process.cwd(), "skills"));
+    expect(bundledSkillNames()).toEqual(["mediagen"]);
+  });
+});
+
+describe("installSkills", () => {
+  it("installs the packaged skill byte-identically and reports an absolute path", () => {
+    const lambda = path.join(tempDir, "lambda");
+
+    const installed = installSkills(lambda);
+
+    const shipped = path.join(process.cwd(), "skills", "mediagen", "SKILL.md");
+    expect(installed).toEqual([
+      { name: "mediagen", path: path.join(lambda, "mediagen"), replaced: false },
+    ]);
+    expect(fs.readFileSync(path.join(lambda, "mediagen", "SKILL.md"), "utf8")).toBe(
+      fs.readFileSync(shipped, "utf8"),
+    );
+  });
+
+  it("expands a leading ~/ against the home directory", () => {
+    const home = path.join(tempDir, "home");
+    fs.mkdirSync(home, { recursive: true });
+    const previous = process.env.HOME;
+    process.env.HOME = home;
+
+    try {
+      const installed = installSkills("~/.claude/skills");
+      expect(installed[0]?.path).toBe(path.join(home, ".claude", "skills", "mediagen"));
+      expect(fs.existsSync(path.join(home, ".claude", "skills", "mediagen", "SKILL.md"))).toBe(true);
+    } finally {
+      process.env.HOME = previous;
+    }
+  });
+
+  it("creates a deeply nested destination from a relative argument", () => {
+    // Relative to the repository root, but inside the temp dir: a test that wrote into the
+    // checkout would trip the sandbox guard in vitest.sandbox.ts.
+    const relative = path.relative(process.cwd(), path.join(tempDir, "deep", "a", "b"));
+    const installed = installSkills(relative);
+
+    expect(path.isAbsolute(installed[0]!.path)).toBe(true);
+    expect(installed[0]!.path).toBe(path.join(tempDir, "deep", "a", "b", "mediagen"));
+    expect(installed[0]!.path).not.toContain("//");
+  });
+
+  it("replaces a previously installed copy", () => {
+    installSkills(tempDir);
+    expect(installSkills(tempDir)[0]?.replaced).toBe(true);
+  });
+
+  it("refuses an empty destination", () => {
+    expect(() => installSkills("  ")).toThrow(/--dir/);
+  });
+
+  it("refuses a destination that is a file", () => {
+    const blocker = path.join(tempDir, "file");
+    fs.writeFileSync(blocker, "x");
+
+    expect(() => installSkills(blocker)).toThrow(/not a directory/);
+  });
+
+  it("refuses a destination it cannot create", () => {
+    const blocker = path.join(tempDir, "file");
+    fs.writeFileSync(blocker, "x");
+
+    expect(() => installSkills(path.join(blocker, "skills"))).toThrow(/cannot create/);
+  });
+});

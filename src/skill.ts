@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { UsageError } from "./errors.js";
 
 /** The two filesystem calls a test replaces to make an install fail mid-flight. */
 export interface SkillDeps {
@@ -72,4 +75,84 @@ function stashPath(root: string, kind: "install" | "retired"): string {
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+export interface InstalledSkill {
+  /** The skill's directory name, e.g. "mediagen". */
+  name: string;
+  /** Absolute path of the installed skill directory. */
+  path: string;
+  /** True when a previous copy was replaced. */
+  replaced: boolean;
+}
+
+/**
+ * The skills this package ships: `skills/` beside the built entry, which is also
+ * `skills/` beside `src/` in a checkout. Same relative-to-the-entry trick
+ * `packageVersion()` uses for `../package.json`.
+ */
+export function bundledSkillsDir(): string {
+  return fileURLToPath(new URL("../skills/", import.meta.url));
+}
+
+export function bundledSkillNames(): string[] {
+  const root = bundledSkillsDir();
+  try {
+    return fs
+      .readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+  } catch (error) {
+    throw new Error(
+      `the skills this package ships were not found at ${root} (${messageOf(error)}); ` +
+        "run mediagen from a normal npm install, where the skills/ directory ships beside dist/cli.js",
+    );
+  }
+}
+
+/** Installs every bundled skill under `targetDir`, replacing what is already there. */
+export function installSkills(targetDir: string, deps: SkillDeps = {}): InstalledSkill[] {
+  const root = prepareTargetDir(targetDir);
+  return bundledSkillNames().map((name) => ({
+    name,
+    path: path.join(root, name),
+    replaced: installSkill(path.join(bundledSkillsDir(), name), path.join(root, name), deps),
+  }));
+}
+
+/**
+ * Turns the `--dir` argument into an absolute, existing directory. Every failure
+ * here is the caller's argument, so all of them are UsageErrors (exit 2); the
+ * message names `--dir` and keeps the errno code, never other fs text.
+ */
+function prepareTargetDir(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    throw new UsageError(
+      'a destination is required: pass --dir <path>, e.g. --dir "~/.claude/skills"',
+    );
+  }
+
+  const expanded =
+    trimmed === "~" || trimmed.startsWith("~/")
+      ? path.join(os.homedir(), trimmed.slice(1))
+      : trimmed;
+  const dir = path.resolve(expanded);
+
+  if (fs.existsSync(dir) && !fs.statSync(dir).isDirectory()) {
+    throw new UsageError(
+      `--dir ${dir} is a file, not a directory: name the directory that holds skills`,
+    );
+  }
+
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch (error) {
+    throw new UsageError(
+      `cannot create the skills directory ${dir}: ${messageOf(error)}; check --dir`,
+    );
+  }
+
+  return dir;
 }
