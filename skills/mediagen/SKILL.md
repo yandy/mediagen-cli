@@ -42,6 +42,15 @@ project has, or when the user asks for it by name.
 
 ## Setup, once
 
+This skill carries no binary: `mediagen` must already be on `PATH`, and the pi package that
+delivered this skill does not put it there. If `command -v mediagen` prints nothing:
+
+```bash
+npm install -g @yandy0725/mediagen-cli
+```
+
+Then one pass per machine:
+
 ```bash
 mediagen config show                          # any command writes and validates config.toml on first use
 mediagen login --api-key sk-...               # the key for the default provider; --provider <name> for another
