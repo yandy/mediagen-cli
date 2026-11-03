@@ -254,11 +254,21 @@ download and 600 s per video download. For video that budget is the *whole* poll
 window, not one request: each create or poll gets 60 s, so a hung request cannot eat
 the budget, and the download has its own 600 s and is not counted against it.
 
-Working from an agent? `mediagen skill install --dir <skills dir>` puts
-`skills/mediagen/SKILL.md` where your agent already looks — e.g. `--dir ~/.claude/skills` — and
-re-running it after an upgrade replaces the old copy. The skill describes what this CLI does,
-which tool to prefer when the project already generates media another way, and the rules that
-keep a paid request from being wasted.
+Working from an agent? Inside pi, install the skill as a pi package:
+
+```bash
+pi install npm:@yandy0725/mediagen-cli
+```
+
+That delivers `skills/mediagen/SKILL.md` only: pi never puts the `mediagen` command on
+`PATH`, so the CLI still comes from `npm install -g @yandy0725/mediagen-cli`. For any other
+agent, `mediagen skill install --dir <skills dir>` puts the same file where that agent
+already looks — e.g. `--dir ~/.claude/skills` — and re-running it after an upgrade replaces
+the old copy. Use one route, not both: pi loads skills by name, so the two copies collide — the
+directory you copied wins and pi only reports a `name "mediagen" collision` warning, which
+means a stale copy silently shadows the upgraded package. The skill describes what this CLI
+does, which tool to prefer when the project already generates media another way, and the
+rules that keep a paid request from being wasted.
 
 ---
 

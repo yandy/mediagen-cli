@@ -229,10 +229,18 @@ OpenAI 兼容端点（`compatible-mode`）只在业务空间专属域名上提�
 `timeout_seconds` 是**整个轮询窗口**，不是单次请求：建任务与每次轮询各自 60 秒，这样一个挂住
 的请求吃不掉预算；下载另有 600 秒，不计入预算。
 
-在 Agent 里用？`mediagen skill install --dir <技能目录>` 会把这个包自带的
-`skills/mediagen/SKILL.md` 装到你 agent 已经在读的位置（例如 `--dir ~/.claude/skills`），升级后
-重跑一次即可覆盖旧版本。这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
-以及哪些规则能避免白花钱。
+在 Agent 里用？在 pi 里，把这份技能当成 pi 包安装：
+
+```bash
+pi install npm:@yandy0725/mediagen-cli
+```
+
+它只送 `skills/mediagen/SKILL.md`：pi 不会把 `mediagen` 命令放进 `PATH`，命令仍来自
+`npm install -g @yandy0725/mediagen-cli`。其他 agent 用 `mediagen skill install --dir <技能目录>`
+把同一个文件装到它已经在读的位置（例如 `--dir ~/.claude/skills`），升级后重跑一次即可覆盖。
+两条路线只选一条：pi 按技能名加载，两份同名技能会冲突——复制出来的那份胜出，pi 只给一条
+name "mediagen" collision 警告，于是旧副本会静默盖住升级后的包。这份技能说明这个 CLI
+能做什么、项目已有别的生成工具时该用哪个，以及哪些规则能避免白花钱。
 
 ---
 
