@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { main } from "../src/cli.js";
 import { installSkill, bundledSkillNames, bundledSkillsDir, installSkills } from "../src/skill.js";
 
 let tempDir: string;
@@ -165,5 +166,75 @@ describe("installSkills", () => {
     fs.writeFileSync(blocker, "x");
 
     expect(() => installSkills(path.join(blocker, "skills"))).toThrow(/cannot create/);
+  });
+});
+
+let outChunks: string[] = [];
+let errChunks: string[] = [];
+
+/** Collects writes instead of letting them reach the terminal. */
+function writer(sink: string[]): typeof process.stdout.write {
+  return ((chunk: unknown): boolean => {
+    sink.push(String(chunk));
+    return true;
+  }) as unknown as typeof process.stdout.write;
+}
+
+async function runCli(argv: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+  outChunks = [];
+  errChunks = [];
+  vi.spyOn(process.stdout, "write").mockImplementation(writer(outChunks));
+  vi.spyOn(process.stderr, "write").mockImplementation(writer(errChunks));
+  const code = await main(argv);
+  vi.restoreAllMocks();
+  return { code, stdout: outChunks.join(""), stderr: errChunks.join("") };
+}
+
+describe("skill install", () => {
+  it("installs into --dir and prints the path on stdout only", async () => {
+    const result = await runCli(["skill", "install", "--dir", tempDir]);
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(`${path.join(tempDir, "mediagen")}\n`);
+    expect(result.stderr).toBe("");
+    expect(fs.existsSync(path.join(tempDir, "mediagen", "SKILL.md"))).toBe(true);
+  });
+
+  it("prints one JSON object with --json", async () => {
+    const result = await runCli(["skill", "install", "--dir", tempDir, "--json"]);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      skills: [{ name: "mediagen", path: path.join(tempDir, "mediagen"), replaced: false }],
+    });
+  });
+
+  it("notes a replacement on stderr and still prints the path on stdout", async () => {
+    await runCli(["skill", "install", "--dir", tempDir]);
+    const second = await runCli(["skill", "install", "--dir", tempDir]);
+
+    expect(second.code).toBe(0);
+    expect(second.stderr).toMatch(/replaced/);
+    expect(second.stdout).toBe(`${path.join(tempDir, "mediagen")}\n`);
+  });
+
+  it("reports a missing --dir as a usage error", async () => {
+    const result = await runCli(["skill", "install"]);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr).toMatch(/--dir/);
+  });
+
+  it("reports a missing --dir as JSON when --json is given", async () => {
+    const result = await runCli(["skill", "install", "--json"]);
+
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout).error.message).toMatch(/--dir/);
+  });
+
+  it("lists the command in --help", async () => {
+    const result = await runCli(["--help"]);
+
+    expect(result.stdout).toMatch(/skill install/);
   });
 });

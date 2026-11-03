@@ -228,7 +228,9 @@ OpenAI 兼容端点（`compatible-mode`）只在业务空间专属域名上提�
 `timeout_seconds` 是**整个轮询窗口**，不是单次请求：建任务与每次轮询各自 60 秒，这样一个挂住
 的请求吃不掉预算；下载另有 600 秒，不计入预算。
 
-在 Agent 里用？`skills/mediagen/SKILL.md` 说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
+在 Agent 里用？`mediagen skill install --dir <技能目录>` 会把这个包自带的
+`skills/mediagen/SKILL.md` 装到你 agent 已经在读的位置（例如 `--dir ~/.claude/skills`），升级后
+重跑一次即可覆盖旧版本。这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
 以及哪些规则能避免白花钱。
 
 ---

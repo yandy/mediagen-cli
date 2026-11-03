@@ -253,9 +253,11 @@ download and 600 s per video download. For video that budget is the *whole* poll
 window, not one request: each create or poll gets 60 s, so a hung request cannot eat
 the budget, and the download has its own 600 s and is not counted against it.
 
-Working from an agent? `skills/mediagen/SKILL.md` describes what this CLI does, which tool
-to prefer when the project already generates media another way, and the rules that keep a
-paid request from being wasted.
+Working from an agent? `mediagen skill install --dir <skills dir>` puts
+`skills/mediagen/SKILL.md` where your agent already looks — e.g. `--dir ~/.claude/skills` — and
+re-running it after an upgrade replaces the old copy. The skill describes what this CLI does,
+which tool to prefer when the project already generates media another way, and the rules that
+keep a paid request from being wasted.
 
 ---
 
