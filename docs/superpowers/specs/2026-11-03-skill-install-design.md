@@ -1,8 +1,8 @@
 # `mediagen skill install` — landing the packaged skill in a directory
 
 Date: 2026-11-03
-Status: awaiting approval — copy the shipped `skills/` directory at runtime, staging it beside
-the destination and swapping it in with one `rename`
+Status: approved — copy the shipped `skills/` directory at runtime, staging it beside the
+destination and swapping it in with renames
 
 ## Why
 
