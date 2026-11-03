@@ -48,6 +48,7 @@ import { shellArg, tomlBasicString, tomlKey } from "./toml.js";
 import type { Task } from "./types.js";
 import { adapterPath } from "./api/index.js";
 import { vendorPathIssue } from "./config.js";
+import { installSkills } from "./skill.js";
 import { normalizeHttpBaseUrl } from "./util.js";
 
 /**
@@ -200,6 +201,7 @@ Subcommands:
   config show       the resolved configuration, with a source note for each value
   config path       where config.toml lives
   config add        create a provider in config.toml (edit the file for anything else)
+  skill install     copy the agent skill this package ships into a directory you name
   video generate    create and pay for a video task, then save the result
   video status      look at one task once, and save its video if it finished
 
@@ -559,6 +561,16 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "print a JSON result")
     .action(async (name: string, flags: ConfigAddFlags) => {
       runConfigAdd(name, flags);
+    });
+
+  const skill = program.command("skill").description("Install the agent skill this package ships");
+  skill
+    .command("install")
+    .description("Copy the skill into a directory an agent reads skills from, replacing an older copy")
+    .option("--dir <path>", "the skills directory, e.g. ~/.claude/skills (the skill lands in <path>/mediagen)")
+    .option("--json", "print a JSON result")
+    .action(async (flags: { dir?: string; json?: boolean }) => {
+      runSkillInstall(flags);
     });
 
   const image = program.command("image").description("Generate and edit images");
@@ -1015,6 +1027,32 @@ function runConfigPath(flags: { json?: boolean }): void {
     return;
   }
   writeLine(configPath());
+}
+
+/** `skill install` needs no config and no network; stdout carries the paths only. */
+function runSkillInstall(flags: { dir?: string; json?: boolean }): void {
+  const installed = installSkills(flags.dir ?? "");
+  const container = path.dirname(installed[0].path);
+
+  // `--dir` names the directory that holds skills. Pointing it at one skill's own
+  // directory nests a level deeper than any agent looks, so say so rather than
+  // leaving a silently unusable install.
+  if (fs.existsSync(path.join(container, "SKILL.md"))) {
+    writeErrLine(
+      `note: ${container} already holds a SKILL.md; --dir names the directory that contains ` +
+        `skills, so the skill landed in ${installed[0].path}`,
+    );
+  }
+
+  if (flags.json === true) {
+    writeLine(JSON.stringify({ skills: installed }));
+    return;
+  }
+
+  for (const entry of installed) {
+    if (entry.replaced) writeErrLine(`replaced the existing copy at ${entry.path}`);
+  }
+  for (const entry of installed) writeLine(entry.path);
 }
 
 /**

@@ -38,6 +38,7 @@ Node >= 18，两个运行时依赖，需要 DashScope 和/或方舟的 API key�
 | `mediagen login` / `logout` / `auth status` | 保存、删除、查看 API key |
 | `mediagen config show` / `config path` | 解析后的配置，以及它存在哪里 |
 | `mediagen config add <name>` | 在 config.toml 里新建一条 provider（其余修改手写文件） |
+| `mediagen skill install --dir <path>` | 把自带的 agent 技能装到 `<path>/mediagen/`；重跑即覆盖 |
 
 `mediagen image generate --help` 与 `mediagen video generate --help` 才是参考手册：
 全部参数、模型表、尺寸表、示例。下面只是简化版。
@@ -228,7 +229,9 @@ OpenAI 兼容端点（`compatible-mode`）只在业务空间专属域名上提�
 `timeout_seconds` 是**整个轮询窗口**，不是单次请求：建任务与每次轮询各自 60 秒，这样一个挂住
 的请求吃不掉预算；下载另有 600 秒，不计入预算。
 
-在 Agent 里用？`skills/mediagen/SKILL.md` 说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
+在 Agent 里用？`mediagen skill install --dir <技能目录>` 会把这个包自带的
+`skills/mediagen/SKILL.md` 装到你 agent 已经在读的位置（例如 `--dir ~/.claude/skills`），升级后
+重跑一次即可覆盖旧版本。这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
 以及哪些规则能避免白花钱。
 
 ---
