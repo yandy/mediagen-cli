@@ -62,10 +62,22 @@ So each install is staged and swapped:
 1. `fs.mkdir(<dir>, {recursive: true})`.
 2. Copy the source skill into a sibling staging directory inside `<dir>`, e.g.
    `<dir>/.mediagen-install-<pid>-<random>/`, so it sits on the same filesystem as the target
-   and the final `rename` cannot fail with `EXDEV`.
-3. `fs.rename(staging, <dir>/<name>)`, which replaces an existing directory in one step.
-4. On any failure, `fs.rm(staging, {recursive: true, force: true})` in a `finally` and let the
-   error out; the previous copy is untouched.
+   and the `rename`s below cannot fail with `EXDEV`.
+3. If `<dir>/<name>` exists, `fs.rename` it aside to `<dir>/.mediagen-retired-<pid>-<random>`.
+4. `fs.rename(staging, <dir>/<name>)`.
+5. `fs.rm(retired, {recursive: true, force: true})`.
+
+Step 3 exists because `rename` cannot replace a non-empty directory — verified: renaming a
+staged directory onto an existing skill directory fails with `ENOTEMPTY`, and only an empty
+destination is accepted. On failure after step 3, the retired directory is renamed back into
+place before the error is rethrown; on failure before it, only the staging directory is
+removed. Either way the previous copy is intact.
+
+The one gap this leaves: between step 3 and step 4 the destination path does not exist, for
+the duration of a single `rename`. That is a missing directory rather than a half-written
+one, and an agent reading at precisely that instant gets "no such skill" — not a truncated
+`SKILL.md`. A full atomic swap over a directory is not available in portable POSIX filesystem
+calls, and this is the shortest window that keeps the old copy recoverable.
 
 The point is that the destination is never observable half-written: at every instant an agent
 reading that path sees either the whole previous copy or the whole new one. Delete-then-copy
