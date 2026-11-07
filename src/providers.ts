@@ -29,12 +29,12 @@ default_provider = "volcengine"
 
 [providers.volcengine]
 base_url    = "https://ark.cn-beijing.volces.com"
-api_key_env = "ARK_API_KEY"   # which environment variable holds this provider's key
+api_key_env = "VOLCENGINE_API_KEY"   # which environment variable holds this provider's key
 
 [providers.volcengine.image]
 api_type = "ark"
 default  = "doubao-seedream-5-0-flash-260915"
-models   = ["doubao-seedream-5-0-flash-260915", "doubao-seedream-5-0-pro"]
+models   = ["doubao-seedream-5-0-flash-260915", "doubao-seedream-5-0-pro-260628"]
 
 [providers.volcengine.video]
 api_type = "ark"
@@ -47,7 +47,7 @@ models   = ["doubao-seedance-1-0-pro-250528"]   # ids are dated snapshots; add m
 # instead — https://{workspace-id}.cn-beijing.maas.aliyuncs.com — which is also
 # where Alibaba recommends sending native calls.
 base_url    = "https://dashscope.aliyuncs.com"
-api_key_env = "DASHSCOPE_API_KEY"
+api_key_env = "ALIYUN_API_KEY"
 
 [providers.aliyun.image]
 api_type = "dashscope"          # input.messages + parameters, output.choices[].image
