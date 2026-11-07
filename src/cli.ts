@@ -201,7 +201,7 @@ Subcommands:
   config show       the resolved configuration, with a source note for each value
   config path       where config.toml lives
   config add        create a provider in config.toml (edit the file for anything else)
-  skill install     copy the agent skill this package ships into a directory you name
+  skills install    copy the agent skill this package ships into a directory you name
   video generate    create and pay for a video task, then save the result
   video status      look at one task once, and save its video if it finished
 
@@ -563,8 +563,8 @@ export function createProgram(options: ProgramOptions = {}): Command {
       runConfigAdd(name, flags);
     });
 
-  const skill = program.command("skill").description("Install the agent skill this package ships");
-  skill
+  const skills = program.command("skills").description("Install the agent skill this package ships");
+  skills
     .command("install")
     .description("Copy the skill into a directory an agent reads skills from, replacing an older copy")
     .option("--dir <path>", "the skills directory, e.g. ~/.claude/skills (the skill lands in <path>/mediagen)")
@@ -1029,7 +1029,7 @@ function runConfigPath(flags: { json?: boolean }): void {
   writeLine(configPath());
 }
 
-/** `skill install` needs no config and no network; stdout carries the paths only. */
+/** `skills install` needs no config and no network; stdout carries the paths only. */
 function runSkillInstall(flags: { dir?: string; json?: boolean }): void {
   const installed = installSkills(flags.dir ?? "");
   const container = path.dirname(installed[0].path);

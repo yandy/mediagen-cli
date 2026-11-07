@@ -1,8 +1,9 @@
-# `mediagen skill install` — landing the packaged skill in a directory
+# `mediagen skills install` — landing the packaged skill in a directory
 
 Date: 2026-11-03
 Status: approved — copy the shipped `skills/` directory at runtime, staging it beside the
-destination and swapping it in with renames
+destination and swapping it in with renames; amended 2026-11-07, the group is now `skills`
+(see the addendum at the end)
 
 ## Why
 
@@ -12,17 +13,17 @@ global install has to dig into `node_modules/@yandy0725/mediagen-cli/skills/` an
 hand, and there is nothing to re-run after an upgrade. The package can hand the file to an
 agent but not install it.
 
-`mediagen skill install --dir <path>` closes that: it copies the skill directories this
+`mediagen skills install --dir <path>` closes that: it copies the skill directories this
 package ships into `<path>/<name>/`.
 
 ## What changes
 
 One new module `src/skill.ts` plus one command group in `src/cli.ts`.
 
-**The command.** A `skill` group with a single subcommand, `install`:
+**The command.** A `skills` group with a single subcommand, `install`:
 
 ```
-mediagen skill install --dir <path> [--json]
+mediagen skills install --dir <path> [--json]
 ```
 
 `--dir` is required and has no default. It names the *skills container* — the directory an
@@ -117,7 +118,7 @@ instead of a path inside `node_modules`.
 
 ## Goals
 
-- `mediagen skill install --dir <path>` installs the packaged skill into `<path>/mediagen/`,
+- `mediagen skills install --dir <path>` installs the packaged skill into `<path>/mediagen/`,
   byte-identical to `skills/mediagen/SKILL.md` in the repository.
 - Re-running it replaces the previous copy and says so on stderr; stdout stays one path per
   line in human mode and the single JSON object above in `--json`.
@@ -134,7 +135,7 @@ instead of a path inside `node_modules`.
 
 - Harness presets (`--for pi`, `--for claude`), defaults, or any discovery of where an agent
   keeps its skills. The directory is the caller's to name.
-- `skill list`, `skill remove`, `skill update`; version pins, checksums, or an index of
+- `skills list`, `skills remove`, `skills update`; version pins, checksums, or an index of
   installed versions.
 - Installing any skill other than the ones this package ships; a `--source` flag for an
   arbitrary directory.
@@ -143,10 +144,10 @@ instead of a path inside `node_modules`.
   tests read, and a `npx`-only benefit nothing has asked for).
 - Sweeping or reporting leftover staging directories from a killed process, and keeping the
   replaced copy as a backup the user can restore.
-- Changing the pre-command bootstrap. `skill install` is a local, config-free command, yet
+- Changing the pre-command bootstrap. `skills install` is a local, config-free command, yet
   `main()` still runs `prepareConfigFile()` before it — accepted, so that every command sees
   the same file and a broken config is reported the same way everywhere. The consequence is
-  that a first run of `skill install` also creates `config.toml`.
+  that a first run of `skills install` also creates `config.toml`.
 
 ## Approaches considered
 
@@ -187,3 +188,24 @@ instead of a path inside `node_modules`.
   reviewed, so no validation is planned; a test pins that what is copied matches the source.
 - Where the README sentence sits inside the existing "Working from an agent?" paragraph, and
   its Chinese counterpart.
+
+## Addendum — 2026-11-07: the group is `skills`, not `skill`
+
+The command shipped in v0.3.x as `mediagen skill install`; it is now
+`mediagen skills install`. The group carries subcommands over the skill *directories* this
+package ships, and the container it writes into is spelled `skills` everywhere the user
+already sees it — `files: ["dist", "skills"]`, `--dir ~/.claude/skills`,
+`--dir ~/.pi/agent/skills` — so the singular read as a typo beside every path the command
+prints.
+
+Nothing inside the command moved: same `src/skill.ts` (still singular — it installs *the
+skill*, and the module name was not the complaint), same required `--dir` with no default,
+same staging-then-rename swap, same stdout, same `--json` envelope, same exit codes. Only the
+group name changed, in `src/cli.ts`, the `--help` subcommand list and the `runSkillInstall`
+comment.
+
+The old form keeps no alias. `mediagen skill install` now exits 2 with
+`unknown command 'skill' (Did you mean skills?)`, which is a breaking change for any script or
+document that still spells it the old way, so the release that carries this is not a patch.
+Updated in the same change: `tests/skill-install.test.ts`, `tests/cli.entry.test.ts`, both
+READMEs, `docs/guides/release.md`, and the body of this document.

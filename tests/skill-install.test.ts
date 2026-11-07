@@ -283,9 +283,9 @@ async function runCli(argv: string[]): Promise<{ code: number; stdout: string; s
   return { code, stdout: outChunks.join(""), stderr: errChunks.join("") };
 }
 
-describe("skill install", () => {
+describe("skills install", () => {
   it("installs into --dir and prints the path on stdout only", async () => {
-    const result = await runCli(["skill", "install", "--dir", tempDir]);
+    const result = await runCli(["skills", "install", "--dir", tempDir]);
 
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(`${path.join(tempDir, "mediagen")}\n`);
@@ -294,7 +294,7 @@ describe("skill install", () => {
   });
 
   it("prints one JSON object with --json", async () => {
-    const result = await runCli(["skill", "install", "--dir", tempDir, "--json"]);
+    const result = await runCli(["skills", "install", "--dir", tempDir, "--json"]);
 
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual({
@@ -303,8 +303,8 @@ describe("skill install", () => {
   });
 
   it("notes a replacement on stderr and still prints the path on stdout", async () => {
-    await runCli(["skill", "install", "--dir", tempDir]);
-    const second = await runCli(["skill", "install", "--dir", tempDir]);
+    await runCli(["skills", "install", "--dir", tempDir]);
+    const second = await runCli(["skills", "install", "--dir", tempDir]);
 
     expect(second.code).toBe(0);
     expect(second.stderr).toMatch(/replaced/);
@@ -316,7 +316,7 @@ describe("skill install", () => {
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), "---\nname: mine\n---\n");
 
-    const result = await runCli(["skill", "install", "--dir", skillDir]);
+    const result = await runCli(["skills", "install", "--dir", skillDir]);
 
     expect(result.code).toBe(0);
     expect(result.stderr).toMatch(/already holds a SKILL\.md/);
@@ -324,14 +324,14 @@ describe("skill install", () => {
   });
 
   it("reports a missing --dir as a usage error", async () => {
-    const result = await runCli(["skill", "install"]);
+    const result = await runCli(["skills", "install"]);
 
     expect(result.code).toBe(2);
     expect(result.stderr).toMatch(/--dir/);
   });
 
   it("reports a missing --dir as JSON when --json is given", async () => {
-    const result = await runCli(["skill", "install", "--json"]);
+    const result = await runCli(["skills", "install", "--json"]);
 
     expect(result.code).toBe(2);
     expect(JSON.parse(result.stdout).error.message).toMatch(/--dir/);
@@ -340,6 +340,6 @@ describe("skill install", () => {
   it("lists the command in --help", async () => {
     const result = await runCli(["--help"]);
 
-    expect(result.stdout).toMatch(/skill install/);
+    expect(result.stdout).toMatch(/skills install/);
   });
 });
