@@ -56,6 +56,6 @@ gh run watch
 - CI（`.github/workflows/test.yml`）在 `push` 到 `main` 和所有 PR 上跑，只在
   `ubuntu-latest` + Node 24。Windows 不在矩阵里：`tests/cli.entry.test.ts` 直接 spawn
   npm 的 `.bin` shim，Windows 上那是 `.cmd`，不是一次矩阵配置能解决的。
-- tarball 必须带 `skills/`：`mediagen skill install` 是从已安装的包里读技能再拷出去的。
+- tarball 必须带 `skills/`：`mediagen skills install` 是从已安装的包里读技能再拷出去的。
   CI 里的 `npm pack --dry-run` 断言（`.github/workflows/test.yml`）盖这一条，发布前确认它是绿的；
   `tests/cli.entry.test.ts` 另有一条离线的断言盯着 `files` 里的 `skills`。

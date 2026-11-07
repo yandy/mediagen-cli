@@ -2,13 +2,15 @@
 
 Date: 2026-11-03
 Status: obsolete (2026-11-07) — the package no longer declares a pi manifest (`pi.skills` /
-`pi-package`). `skills/` stays in `files` only because `mediagen skill install` copies the
-skill out of the installed package. Kept as the record of the decision made at the time.
+`pi-package`). `skills/` stays in `files` only because `mediagen skills install` copies the
+skill out of the installed package. Kept as the record of the decision made at the time; that
+command was `mediagen skill install` until 2026-11-07 (see the addendum in
+`2026-11-03-skill-install-design.md`).
 
 ## Why
 
 Someone working inside [pi](https://pi.dev) should not have to find the skill directory by
-hand. `mediagen skill install --dir ~/.pi/agent/skills` works, but pi has a native route:
+hand. `mediagen skills install --dir ~/.pi/agent/skills` works, but pi has a native route:
 a pi package delivers skills straight from an npm spec, and this repository already ships
 `skills/mediagen/SKILL.md` in its tarball (`files: ["dist", "skills"]`).
 
@@ -44,7 +46,7 @@ discovery ever changed, and nothing in this repo currently states the intent.
 - A separate skills-only npm package.
 - Gallery previews (`pi.image` / `pi.video`).
 - Any change to `skills/mediagen/SKILL.md`'s content.
-- Any change to `mediagen skill install`.
+- Any change to `mediagen skills install`.
 - Publishing a release (a separate, explicitly approved step).
 
 ## Anti-goals
@@ -60,7 +62,7 @@ discovery ever changed, and nothing in this repo currently states the intent.
 - pi dedupes resolved resource *paths*, but loads skills by *name*: two copies of `mediagen`
   yield one skill, not two, plus a `name "mediagen" collision` diagnostic. The user directory
   (precedence rank 3) outranks a package resource (rank 4), so a copy installed by
-  `mediagen skill install --dir ~/.pi/agent/skills` silently shadows the upgraded package copy.
+  `mediagen skills install --dir ~/.pi/agent/skills` silently shadows the upgraded package copy.
   The docs must say to pick one route; the code cannot detect it.
 - The package has no extensions, so pi's package changelog never applies (`pi.changelogPath`
   is pointless here).
@@ -91,7 +93,7 @@ have. Rejected: the marginal benefit is disk space, and the drift risk is real.
 
 3. **`README.md` / `README.zh-CN.md`** — the "Working from an agent?" paragraph leads with
    the pi route (`pi install npm:@yandy0725/mediagen-cli`), then keeps
-   `mediagen skill install --dir <skills dir>` for other agents and for pinning the skill to
+   `mediagen skills install --dir <skills dir>` for other agents and for pinning the skill to
    an explicit directory. Both say the pi package delivers the skill only; the `mediagen`
    command still comes from `npm install -g @yandy0725/mediagen-cli`. Both say to use one
    route, not both.
