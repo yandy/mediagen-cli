@@ -27,6 +27,22 @@ mediagen image generate "a red fox in fresh snow, soft morning light" --provider
 
 Node >= 18，两个运行时依赖，需要 DashScope 和/或方舟的 API key。
 
+## 在 Agent 里用
+
+`skills/mediagen/SKILL.md` 这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
+以及哪些规则能避免白花钱。两种装法，装出来的技能都叫 `mediagen`，选一种：
+
+```bash
+npx skills add yandy/mediagen-cli               # 直接从 GitHub 取，什么都不用先装
+mediagen skill install --dir ~/.claude/skills   # 从已安装的本包里拷
+```
+
+`npx skills add` 读仓库、找出这一个技能，再链接进它检测到的每个 agent——用 `-a <agent>`
+点名、agent 不支持符号链接时加 `--copy`、想装到用户级加 `-g`。`mediagen skill install`
+拷的是 npm 包里自带的那个目录，所以要求 CLI 已在 `PATH` 上；没有 `skills` CLI、但有技能
+目录的 agent 用它，升级后重跑一次即覆盖旧副本（另一条路线用 `npx skills update` 刷新）。
+两条路线都**不装命令本身**：`mediagen` 仍来自 `npm install -g @yandy0725/mediagen-cli`。
+
 ## 命令
 
 | 命令 | 作用 |
@@ -228,10 +244,6 @@ OpenAI 兼容端点（`compatible-mode`）只在业务空间专属域名上提�
 （默认图片 300 秒、视频 1800 秒），每次图片下载 120 秒、视频下载 600 秒。对视频来说，
 `timeout_seconds` 是**整个轮询窗口**，不是单次请求：建任务与每次轮询各自 60 秒，这样一个挂住
 的请求吃不掉预算；下载另有 600 秒，不计入预算。
-
-在 Agent 里用？`mediagen skill install --dir <技能目录>` 会把自带的 `skills/mediagen/SKILL.md`
-装到它已经在读的位置（例如 `--dir ~/.claude/skills`），升级后重跑一次即可覆盖旧副本。
-这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，以及哪些规则能避免白花钱。
 
 ---
 

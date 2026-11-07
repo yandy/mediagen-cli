@@ -28,6 +28,26 @@ mediagen image generate "a red fox in fresh snow, soft morning light" --provider
 
 Node >= 18, two runtime dependencies, a DashScope and/or Ark API key.
 
+## Using it from an agent
+
+The skill in `skills/mediagen/SKILL.md` says what this CLI does, which tool to prefer
+when the project already generates media another way, and the rules that keep a paid
+request from being wasted. Two routes install it; both land a skill named `mediagen`,
+so pick one:
+
+```bash
+npx skills add yandy/mediagen-cli               # from GitHub; nothing to install first
+mediagen skill install --dir ~/.claude/skills   # from this package, once it is installed
+```
+
+`npx skills add` reads the repository, finds the one skill and links it into every agent
+it detects — `-a <agent>` to name them, `--copy` when the agent cannot follow a symlink,
+`-g` for a user-wide install. `mediagen skill install` copies the directory the npm
+package ships, so it needs the CLI on `PATH`; use it for an agent with a skills directory
+and no `skills` CLI, and re-run it after an upgrade (`npx skills update` refreshes the
+other route). Neither route installs the binary: `mediagen` itself still comes from
+`npm install -g @yandy0725/mediagen-cli`.
+
 ## Commands
 
 | command | what it does |
@@ -253,12 +273,6 @@ tasks, their models, and the endpoint each one would actually hit. Set
 download and 600 s per video download. For video that budget is the *whole* poll
 window, not one request: each create or poll gets 60 s, so a hung request cannot eat
 the budget, and the download has its own 600 s and is not counted against it.
-
-Working from an agent? `mediagen skill install --dir <skills dir>` copies the bundled
-`skills/mediagen/SKILL.md` to where that agent already looks — e.g. `--dir ~/.claude/skills` —
-and re-running it after an upgrade replaces the old copy. The skill describes what this CLI
-does, which tool to prefer when the project already generates media another way, and the
-rules that keep a paid request from being wasted.
 
 ---
 
