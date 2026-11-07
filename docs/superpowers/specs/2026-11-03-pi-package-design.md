@@ -1,8 +1,9 @@
 # `pi install npm:@yandy0725/mediagen-cli` — declaring the skills bundle
 
 Date: 2026-11-03
-Status: awaiting approval — declare the bundled skill as a pi package resource in the
-existing npm package, then document the route; no second package.
+Status: obsolete (2026-11-07) — the package no longer declares a pi manifest (`pi.skills` /
+`pi-package`). `skills/` stays in `files` only because `mediagen skill install` copies the
+skill out of the installed package. Kept as the record of the decision made at the time.
 
 ## Why
 

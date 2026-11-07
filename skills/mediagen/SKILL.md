@@ -42,8 +42,8 @@ project has, or when the user asks for it by name.
 
 ## Setup, once
 
-This skill carries no binary: `mediagen` must already be on `PATH`, and the pi package that
-delivered this skill does not put it there. If `command -v mediagen` prints nothing:
+This skill carries no binary: `mediagen` must already be on `PATH`, and installing this
+skill never puts it there. If `command -v mediagen` prints nothing:
 
 ```bash
 npm install -g @yandy0725/mediagen-cli
