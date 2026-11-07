@@ -11,13 +11,7 @@
     "dist",
     "skills"
   ],
-  "pi": {
-    "skills": [
-      "./skills"
-    ]
-  },
   "keywords": [
-    "pi-package",
     "cli",
     "image",
     "image-generation",

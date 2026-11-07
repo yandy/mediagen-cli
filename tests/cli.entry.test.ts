@@ -224,57 +224,20 @@ describe("packaged entry point", () => {
   });
 });
 
-describe("pi package manifest", () => {
-  /** Every SKILL.md at or below `dir`: pi treats a directory holding one as a skill. */
-  function findSkillFiles(dir: string): string[] {
-    const found: string[] = [];
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        found.push(...findSkillFiles(full));
-      } else if (entry.name === "SKILL.md") {
-        found.push(full);
-      }
-    }
-    return found;
-  }
-
+describe("published tarball", () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
-    keywords?: string[];
     files?: string[];
-    pi?: { skills?: string[] };
   };
 
-  it("declares the bundled skill as a pi package resource", () => {
-    expect(pkg.pi?.skills).toEqual(["./skills"]);
-    expect(pkg.keywords).toContain("pi-package");
-  });
+  // `mediagen skill install` copies the skill out of the installed package, so the
+  // skill must travel in the tarball: a `files` array that drops `skills/` ships a
+  // package whose install command has nothing to copy. CI greps the packed tarball
+  // for the same file; this is the offline half of that check.
+  it("ships the bundled skill that `mediagen skill install` copies", () => {
+    const skill = path.join(repoRoot, "skills", "mediagen", "SKILL.md");
 
-  it("points every declared skill directory at a directory holding a SKILL.md", () => {
-    const declared = pkg.pi?.skills ?? [];
-
-    expect(declared.length).toBeGreaterThan(0);
-    for (const entry of declared) {
-      const resolved = path.resolve(repoRoot, entry);
-
-      expect(resolved.startsWith(`${repoRoot}${path.sep}`)).toBe(true);
-      expect(findSkillFiles(resolved)).toContain(path.join(resolved, "mediagen", "SKILL.md"));
-    }
-  });
-
-  it("publishes every declared skill directory", () => {
-    const published = pkg.files ?? [];
-
-    for (const entry of pkg.pi?.skills ?? []) {
-      const relative = path
-        .relative(repoRoot, path.resolve(repoRoot, entry))
-        .split(path.sep)
-        .join("/");
-
-      expect(
-        published.some((p) => relative === p || relative.startsWith(`${p}/`)),
-        `${entry} is declared in pi.skills but no files entry publishes it`,
-      ).toBe(true);
-    }
+    expect(pkg.files).toContain("skills");
+    expect(fs.existsSync(skill)).toBe(true);
+    expect(fs.readFileSync(skill, "utf8")).toContain("name: mediagen");
   });
 });
