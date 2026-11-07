@@ -30,6 +30,10 @@ const TRACKED_ENV = [
   "MEDIAGEN_CLI_STATE_DIR",
   "DASHSCOPE_API_KEY",
   "ARK_API_KEY",
+  // The seed names these two, so a real key in the developer's shell must not leak
+  // into the seeded-config tests (aliyun below is deliberately left without one).
+  "VOLCENGINE_API_KEY",
+  "ALIYUN_API_KEY",
 ] as const;
 
 interface StubCall {
@@ -53,6 +57,9 @@ function smokeEnv(): NodeJS.ProcessEnv {
     MEDIAGEN_CLI_STATE_DIR: path.join(tempDir, "state"),
     DASHSCOPE_API_KEY: QWEN_KEY,
     ARK_API_KEY: ARK_KEY,
+    // What the shipped seed points volcengine at; the config written in beforeEach
+    // still uses ARK_API_KEY, so both names are present here.
+    VOLCENGINE_API_KEY: ARK_KEY,
   };
 }
 
@@ -346,7 +353,7 @@ describe("smoke: the seeded config", () => {
     expect(config.default_provider).toBe("volcengine");
     expect(config.providers.volcengine.tasks.image?.models).toEqual([
       "doubao-seedream-5-0-flash-260915",
-      "doubao-seedream-5-0-pro",
+      "doubao-seedream-5-0-pro-260628",
     ]);
     expect(config.providers.volcengine.tasks.video?.models).toEqual([
       "doubao-seedance-1-0-pro-250528",

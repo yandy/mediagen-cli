@@ -215,14 +215,14 @@ describe("prepareConfigFile", () => {
     expect(Object.keys(config.providers).sort()).toEqual(["aliyun", "minimax", "volcengine"]);
     expect(config.providers.volcengine).toEqual({
       base_url: "https://ark.cn-beijing.volces.com",
-      api_key_env: "ARK_API_KEY",
+      api_key_env: "VOLCENGINE_API_KEY",
       tasks: {
         // Two models on one provider is the point of the shape: no second entry.
         // The protocol is declared per task, so the account table holds none.
         image: {
           api_type: "ark",
           default: "doubao-seedream-5-0-flash-260915",
-          models: ["doubao-seedream-5-0-flash-260915", "doubao-seedream-5-0-pro"],
+          models: ["doubao-seedream-5-0-flash-260915", "doubao-seedream-5-0-pro-260628"],
         },
         video: {
           api_type: "ark",
