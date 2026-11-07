@@ -229,11 +229,11 @@ describe("published tarball", () => {
     files?: string[];
   };
 
-  // `mediagen skill install` copies the skill out of the installed package, so the
+  // `mediagen skills install` copies the skill out of the installed package, so the
   // skill must travel in the tarball: a `files` array that drops `skills/` ships a
   // package whose install command has nothing to copy. CI greps the packed tarball
   // for the same file; this is the offline half of that check.
-  it("ships the bundled skill that `mediagen skill install` copies", () => {
+  it("ships the bundled skill that `mediagen skills install` copies", () => {
     const skill = path.join(repoRoot, "skills", "mediagen", "SKILL.md");
 
     expect(pkg.files).toContain("skills");
