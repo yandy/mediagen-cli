@@ -30,23 +30,13 @@ Node >= 18, two runtime dependencies, a DashScope and/or Ark API key.
 
 ## Using it from an agent
 
-The skill in `skills/mediagen/SKILL.md` says what this CLI does, which tool to prefer
-when the project already generates media another way, and the rules that keep a paid
-request from being wasted. Two routes install it; both land a skill named `mediagen`,
-so pick one:
+The skill in `skills/mediagen/SKILL.md` tells an agent what this CLI does and which rules
+keep a paid request from being wasted. Install it either way:
 
 ```bash
-npx skills add yandy/mediagen-cli               # from GitHub; nothing to install first
-mediagen skill install --dir ~/.claude/skills   # from this package, once it is installed
+npx skills add yandy/mediagen-cli
+mediagen skill install --dir ~/.claude/skills
 ```
-
-`npx skills add` reads the repository, finds the one skill and links it into every agent
-it detects — `-a <agent>` to name them, `--copy` when the agent cannot follow a symlink,
-`-g` for a user-wide install. `mediagen skill install` copies the directory the npm
-package ships, so it needs the CLI on `PATH`; use it for an agent with a skills directory
-and no `skills` CLI, and re-run it after an upgrade (`npx skills update` refreshes the
-other route). Neither route installs the binary: `mediagen` itself still comes from
-`npm install -g @yandy0725/mediagen-cli`.
 
 ## Commands
 

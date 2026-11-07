@@ -29,19 +29,12 @@ Node >= 18，两个运行时依赖，需要 DashScope 和/或方舟的 API key�
 
 ## 在 Agent 里用
 
-`skills/mediagen/SKILL.md` 这份技能说明这个 CLI 能做什么、项目已有别的生成工具时该用哪个，
-以及哪些规则能避免白花钱。两种装法，装出来的技能都叫 `mediagen`，选一种：
+`skills/mediagen/SKILL.md` 这份技能告诉 agent 这个 CLI 能做什么、哪些规则能避免白花钱。两种装法：
 
 ```bash
-npx skills add yandy/mediagen-cli               # 直接从 GitHub 取，什么都不用先装
-mediagen skill install --dir ~/.claude/skills   # 从已安装的本包里拷
+npx skills add yandy/mediagen-cli
+mediagen skill install --dir ~/.claude/skills
 ```
-
-`npx skills add` 读仓库、找出这一个技能，再链接进它检测到的每个 agent——用 `-a <agent>`
-点名、agent 不支持符号链接时加 `--copy`、想装到用户级加 `-g`。`mediagen skill install`
-拷的是 npm 包里自带的那个目录，所以要求 CLI 已在 `PATH` 上；没有 `skills` CLI、但有技能
-目录的 agent 用它，升级后重跑一次即覆盖旧副本（另一条路线用 `npx skills update` 刷新）。
-两条路线都**不装命令本身**：`mediagen` 仍来自 `npm install -g @yandy0725/mediagen-cli`。
 
 ## 命令
 
