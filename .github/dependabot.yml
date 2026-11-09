@@ -1,38 +1,18 @@
-# Version updates only. Security updates (Dependabot alerts) are configured in
-# the repository settings, not here, and always open against the default branch.
 version: 2
-
 updates:
-  # Runtime deps (commander, smol-toml) and devDeps (tsup, vitest, typescript...).
-  # Dependabot rewrites package.json *and* package-lock.json; the lockfile-sync
-  # job in test.yml checks exactly that, so a PR that touches only one is red.
-  - package-ecosystem: npm
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: weekly
-    # Minor + patch in one PR, majors alone: a major bump of a build tool is the
-    # one that needs a human reading the changelog, not a bundled diff.
-    groups:
-      npm-minor-patch:
-        update-types:
-          - minor
-          - patch
-    commit-message:
-      prefix: chore(deps)
-      prefix-development: chore(deps-dev)
-    # Groups replace the per-dependency PRs, so 5 open slots is a lot of room.
+      interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
 
-  # actions/checkout, actions/setup-node in .github/workflows/*.yml.
-  - package-ecosystem: github-actions
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: weekly
-    groups:
-      actions-minor-patch:
-        update-types:
-          - minor
-          - patch
-    commit-message:
-      prefix: ci(deps)
-    open-pull-requests-limit: 5
+      interval: "weekly"
