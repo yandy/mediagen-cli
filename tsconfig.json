@@ -4,7 +4,12 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    // TypeScript 7 (tsgo) does not pull node_modules/@types/* into the program on
+    // its own, so the Node globals have to be requested. They used to arrive by
+    // accident: vitest 2's types reached vite 5, whose index.d.ts carries
+    // `/// <reference types="node" />`. vitest 5's types no longer reach that file.
+    "types": ["node"]
   },
   "include": ["src", "tests"]
 }
